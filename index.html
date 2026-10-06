@@ -1,0 +1,281 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#3a2063">
+<title>Classroom Remote</title>
+<style>
+  :root {
+    --bg: #f5f1fa; --card: #ffffff; --ink: #231933; --muted: #675a7d; --line: #ddd0ee;
+    --brand: #5b3391; --brand-ink: #ffffff; --accent: #f2b134; --accent-ink: #4a2f00;
+    --ok: #2e8b57; --bad: #c2562f;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #140d22; --card: #1e1433; --ink: #f1ecfa; --muted: #b6a6d1; --line: #3a2a57; --brand: #9568d6; --brand-ink: #140d22; }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  body { padding: max(12px, env(safe-area-inset-top)) 14px max(16px, env(safe-area-inset-bottom)); max-width: 640px; margin: 0 auto; }
+  header { display: flex; align-items: center; gap: 10px; justify-content: space-between; margin-bottom: 10px; }
+  header h1 { font-size: 15px; margin: 0; font-weight: 700; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--muted); flex: none; }
+  .dot.ok { background: var(--ok); } .dot.bad { background: var(--bad); } .dot.wait { background: var(--accent); }
+  .status { font-size: 13px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+  .card { background: var(--card); border: 1.5px solid var(--line); border-radius: 18px; padding: 14px 16px; margin-bottom: 12px; }
+  .counter { font-weight: 700; color: var(--brand); font-size: 14px; }
+  .kicker { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 700; margin-top: 4px; }
+  .title { font-size: 22px; font-weight: 800; margin: 2px 0 0; }
+  .next { font-size: 13px; color: var(--muted); margin-top: 8px; }
+  .notes { white-space: pre-wrap; font-size: 16px; max-height: 38vh; overflow-y: auto; }
+  .notes.empty { color: var(--muted); font-style: italic; }
+  .label { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 700; margin-bottom: 6px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
+  button { font: inherit; border: 0; border-radius: 16px; padding: 16px 10px; font-weight: 800; cursor: pointer; color: var(--ink); background: var(--card); border: 1.5px solid var(--line); min-height: 58px; }
+  button:active { transform: scale(.97); }
+  button.big { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); font-size: 20px; min-height: 76px; }
+  button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  button:disabled { opacity: .45; }
+  .timer { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .time { font-size: 38px; font-weight: 800; font-variant-numeric: tabular-nums; min-width: 4.2ch; }
+  .time.urgent { color: var(--bad); }
+  .timer button { padding: 10px 14px; min-height: 48px; }
+  .lesson { font-size: 14px; color: var(--muted); }
+  details { margin-top: 4px; }
+  summary { cursor: pointer; font-weight: 700; color: var(--muted); padding: 8px 0; }
+  .slides button { display: block; width: 100%; text-align: start; margin-bottom: 6px; font-weight: 600; min-height: 44px; padding: 10px 12px; }
+  .slides button.here { border-color: var(--brand); background: var(--brand); color: var(--brand-ink); }
+  form.setup label { display: block; font-weight: 700; margin: 10px 0 4px; }
+  form.setup input { width: 100%; font: inherit; padding: 12px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--card); color: var(--ink); }
+  [hidden] { display: none !important; }
+  .rtl { direction: rtl; text-align: right; }
+</style>
+</head>
+<body>
+
+<section id="setup" hidden>
+  <div class="card">
+    <h2 style="margin-top:0">Connect to your tablet</h2>
+    <p>Open this page from the QR code on the tablet (Phone remote screen), or fill in the two boxes below.</p>
+    <form class="setup" id="setupForm">
+      <label for="db">Database address</label>
+      <input id="db" type="url" autocomplete="off" autocapitalize="off" placeholder="https://your-project-default-rtdb.firebaseio.com">
+      <label for="code">Pairing code</label>
+      <input id="code" type="text" autocomplete="off" autocapitalize="characters" placeholder="ABCDE12345">
+      <button class="big" type="submit" style="width:100%;margin-top:16px">Connect</button>
+    </form>
+  </div>
+</section>
+
+<section id="remote" hidden>
+  <header>
+    <h1 id="lesson">Classroom Remote</h1>
+    <div class="status"><span id="dot" class="dot wait"></span><span id="statusText">Connecting…</span></div>
+  </header>
+
+  <div class="card">
+    <div class="counter" id="counter">—</div>
+    <div class="kicker" id="kicker"></div>
+    <div class="title" id="title">Waiting for the tablet…</div>
+    <div class="next" id="next"></div>
+  </div>
+
+  <div class="grid">
+    <button id="prev">◀ Back</button>
+    <button id="nextBtn" class="big">Next ▶</button>
+  </div>
+  <div class="grid">
+    <button id="reveal">Reveal</button>
+    <button id="blank">Blank screen</button>
+    <button id="freeze">Freeze</button>
+    <button id="classmode">Class mode</button>
+  </div>
+
+  <div class="card">
+    <div class="label">Timer</div>
+    <div class="timer">
+      <span class="time" id="time">00:00</span>
+      <button id="tToggle">Start</button>
+      <button id="tReset">Reset</button>
+      <button id="tAdd">+1 min</button>
+    </div>
+    <div class="lesson" id="lessonClock" style="margin-top:8px"></div>
+  </div>
+
+  <div class="card">
+    <div class="label">Your notes</div>
+    <div id="notes" class="notes empty">No notes for this slide.</div>
+  </div>
+
+  <div class="card slides">
+    <details>
+      <summary>Jump to a slide</summary>
+      <div id="slideList"></div>
+    </details>
+  </div>
+
+  <p style="text-align:center"><button id="forget" style="min-height:40px;padding:8px 14px;font-weight:600">Use a different tablet</button></p>
+</section>
+
+<script>
+(function () {
+  "use strict";
+  var $ = function (id) { return document.getElementById(id); };
+  var db = "", code = "", es = null, lastBeat = null, lastBeatAt = 0, state = null;
+
+  // The address may carry the database and the pairing code:
+  //   page.html?db=https%3A%2F%2F...#CODE   (the code is after "#", so it is never sent to a server)
+  function readConfig() {
+    var params = new URLSearchParams(location.search);
+    var fromUrlDb = params.get("db");
+    var fromUrlCode = (location.hash || "").replace(/^#/, "").trim();
+    try {
+      if (fromUrlDb && fromUrlCode) {
+        localStorage.setItem("cr_db", fromUrlDb);
+        localStorage.setItem("cr_code", fromUrlCode);
+        history.replaceState(null, "", location.pathname); // hide them from the address bar
+      }
+      db = localStorage.getItem("cr_db") || "";
+      code = localStorage.getItem("cr_code") || "";
+    } catch (e) { db = fromUrlDb || ""; code = fromUrlCode || ""; }
+    db = db.replace(/\/+$/, "").replace(/\.json$/, "");
+  }
+
+  function base() { return db + "/remote/" + encodeURIComponent(code); }
+
+  function setStatus(kind, text) {
+    $("dot").className = "dot " + kind;
+    $("statusText").textContent = text;
+  }
+
+  function fmt(sec) {
+    sec = Math.max(0, Math.floor(sec || 0));
+    var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+    var two = function (n) { return (n < 10 ? "0" : "") + n; };
+    return (h ? h + ":" + two(m) : two(m)) + ":" + two(s);
+  }
+
+  function hasArabic(t) { return /[؀-ۿ]/.test(t || ""); }
+  function setText(el, text) { el.textContent = text || ""; el.classList.toggle("rtl", hasArabic(text)); }
+
+  var buzz = function () { try { if (navigator.vibrate) navigator.vibrate(20); } catch (e) {} };
+
+  function send(action, value) {
+    buzz();
+    var body = { a: action, t: Date.now() };
+    if (value !== undefined) body.v = String(value);
+    fetch(base() + "/cmd.json", { method: "POST", body: JSON.stringify(body) })
+      .then(function (r) { if (!r.ok) setStatus("bad", "Could not send (" + r.status + ")"); })
+      .catch(function () { setStatus("bad", "No internet"); });
+  }
+
+  function render(s) {
+    state = s;
+    setText($("lesson"), s.lesson || "Classroom Remote");
+    $("counter").textContent = "Slide " + (s.index + 1) + " of " + s.total;
+    setText($("kicker"), s.kicker);
+    setText($("title"), s.title || "(untitled)");
+    $("next").textContent = s.next ? "Next: " + s.next : "Last slide";
+    var n = $("notes");
+    if (s.notes) { n.textContent = s.notes; n.className = "notes" + (hasArabic(s.notes) ? " rtl" : ""); }
+    else { n.textContent = "No notes for this slide."; n.className = "notes empty"; }
+
+    $("prev").disabled = s.index <= 0;
+    $("nextBtn").disabled = s.index >= s.total - 1;
+    var rv = $("reveal");
+    rv.textContent = s.points > 0 ? "Reveal (" + s.revealed + "/" + s.points + ")" : "Reveal";
+    rv.disabled = s.points === 0 || s.frozen || s.revealed >= s.points;
+    $("blank").classList.toggle("on", !!s.blank);
+    $("blank").textContent = s.blank ? "Show screen" : "Blank screen";
+    $("freeze").classList.toggle("on", !!s.frozen);
+    $("freeze").textContent = s.frozen ? "Unfreeze" : "Freeze";
+    $("classmode").classList.toggle("on", !!s.classMode);
+    $("classmode").textContent = s.classMode ? "Exit class mode" : "Class mode";
+
+    var t = s.timer || {};
+    var tm = $("time");
+    tm.textContent = t.finished ? "Time's up!" : fmt(t.left);
+    tm.classList.toggle("urgent", !!t.finished || (t.running && t.left <= 10));
+    $("tToggle").textContent = t.running ? "Pause" : "Start";
+    $("tToggle").disabled = !t.running && !(t.left > 0);
+    $("lessonClock").textContent = "Lesson " + fmt(s.lessonClock) + (s.planned ? " / " + s.planned + " min planned" : "");
+
+    var list = $("slideList");
+    if (list.dataset.sig !== JSON.stringify(s.titles)) {
+      list.dataset.sig = JSON.stringify(s.titles);
+      list.textContent = "";
+      (s.titles || []).forEach(function (title, i) {
+        var b = document.createElement("button");
+        b.dataset.i = i;
+        b.textContent = (i + 1) + ". " + (title || "(untitled)");
+        if (hasArabic(title)) b.classList.add("rtl");
+        list.appendChild(b);
+      });
+    }
+    Array.prototype.forEach.call(list.children, function (b, i) { b.classList.toggle("here", i === s.index); });
+  }
+
+  function connect() {
+    if (es) es.close();
+    setStatus("wait", "Connecting…");
+    es = new EventSource(base() + "/state.json");
+    var handle = function (e) {
+      var msg; try { msg = JSON.parse(e.data); } catch (x) { return; }
+      if (msg.path === "/" && msg.data && typeof msg.data === "object") {
+        lastBeatAt = Date.now();
+        if (msg.data.beat !== lastBeat) lastBeat = msg.data.beat;
+        render(msg.data);
+        setStatus("ok", "Connected");
+      }
+    };
+    es.addEventListener("put", handle);
+    es.addEventListener("patch", handle);
+    es.onerror = function () { setStatus("bad", "Connection lost, retrying…"); };
+  }
+
+  // The tablet sends an update at least every 10 seconds. If none arrive, say so.
+  setInterval(function () {
+    if (!state) return;
+    var quiet = Date.now() - lastBeatAt;
+    if (quiet > 25000) setStatus("bad", "Tablet not responding");
+  }, 3000);
+
+  function showSetup() { $("setup").hidden = false; $("remote").hidden = true; $("db").value = db; $("code").value = code; }
+  function showRemote() { $("setup").hidden = true; $("remote").hidden = false; connect(); }
+
+  $("setupForm").addEventListener("submit", function (e) {
+    e.preventDefault();
+    db = $("db").value.trim().replace(/\/+$/, "").replace(/\.json$/, "");
+    code = $("code").value.trim().toUpperCase();
+    if (!db || code.length < 8) { return; }
+    try { localStorage.setItem("cr_db", db); localStorage.setItem("cr_code", code); } catch (x) {}
+    showRemote();
+  });
+
+  $("prev").onclick = function () { send("prev"); };
+  $("nextBtn").onclick = function () { send("next"); };
+  $("reveal").onclick = function () { send("reveal"); };
+  $("blank").onclick = function () { send("blank"); };
+  $("freeze").onclick = function () { send("freeze"); };
+  $("classmode").onclick = function () { send("classmode"); };
+  $("tToggle").onclick = function () { send(state && state.timer && state.timer.running ? "tpause" : "tstart"); };
+  $("tReset").onclick = function () { send("treset"); };
+  $("tAdd").onclick = function () { send("tadd"); };
+  $("lessonClock").onclick = function () { send("cstart"); };
+  $("slideList").onclick = function (e) { var b = e.target.closest("button"); if (b) send("goto", b.dataset.i); };
+  $("forget").onclick = function () {
+    try { localStorage.removeItem("cr_db"); localStorage.removeItem("cr_code"); } catch (x) {}
+    if (es) es.close(); db = ""; code = ""; state = null; showSetup();
+  };
+
+  // Keep the phone screen awake while the remote is open.
+  var lock = null;
+  function keepAwake() { try { if (navigator.wakeLock) navigator.wakeLock.request("screen").then(function (l) { lock = l; }).catch(function () {}); } catch (e) {} }
+  document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible" && !$("remote").hidden) { keepAwake(); if (es && es.readyState === 2) connect(); } });
+
+  readConfig();
+  if (db && code) { showRemote(); keepAwake(); } else { showSetup(); }
+})();
+</script>
+</body>
+</html>
