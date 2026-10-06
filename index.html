@@ -16,7 +16,7 @@
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; }
-  body { padding: max(12px, env(safe-area-inset-top)) 14px max(16px, env(safe-area-inset-bottom)); max-width: 640px; margin: 0 auto; }
+  body { padding: max(12px, env(safe-area-inset-top)) 14px calc(86px + env(safe-area-inset-bottom)); max-width: 640px; margin: 0 auto; }
   header { display: flex; align-items: center; gap: 10px; justify-content: space-between; margin-bottom: 10px; }
   header h1 { font-size: 15px; margin: 0; font-weight: 700; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .dot { width: 12px; height: 12px; border-radius: 50%; background: var(--muted); flex: none; }
@@ -29,26 +29,36 @@
   .next { font-size: 13px; color: var(--muted); margin-top: 8px; }
   .notes { white-space: pre-wrap; font-size: 16px; max-height: 38vh; overflow-y: auto; }
   .notes.empty { color: var(--muted); font-style: italic; }
-  .label { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 700; margin-bottom: 6px; }
+  .label { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 700; margin-bottom: 8px; }
   .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px; }
-  button { font: inherit; border: 0; border-radius: 16px; padding: 16px 10px; font-weight: 800; cursor: pointer; color: var(--ink); background: var(--card); border: 1.5px solid var(--line); min-height: 58px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; }
+  button { font: inherit; border: 0; border-radius: 16px; padding: 14px 10px; font-weight: 800; cursor: pointer; color: var(--ink); background: var(--card); border: 1.5px solid var(--line); min-height: 54px; touch-action: manipulation; user-select: none; -webkit-user-select: none; }
   button:active { transform: scale(.97); }
   button.big { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); font-size: 20px; min-height: 76px; }
+  button.huge { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); font-size: 22px; min-height: 92px; }
   button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-  button:disabled { opacity: .45; }
-  .timer { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-  .time { font-size: 38px; font-weight: 800; font-variant-numeric: tabular-nums; min-width: 4.2ch; }
+  button.small { padding: 10px 12px; min-height: 46px; font-weight: 700; }
+  button:disabled { opacity: .4; }
+  .time { font-size: 52px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
   .time.urgent { color: var(--bad); }
-  .timer button { padding: 10px 14px; min-height: 48px; }
   .lesson { font-size: 14px; color: var(--muted); }
   details { margin-top: 4px; }
   summary { cursor: pointer; font-weight: 700; color: var(--muted); padding: 8px 0; }
   .slides button { display: block; width: 100%; text-align: start; margin-bottom: 6px; font-weight: 600; min-height: 44px; padding: 10px 12px; }
   .slides button.here { border-color: var(--brand); background: var(--brand); color: var(--brand-ink); }
   form.setup label { display: block; font-weight: 700; margin: 10px 0 4px; }
-  form.setup input { width: 100%; font: inherit; padding: 12px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--card); color: var(--ink); }
+  input[type=text], input[type=url], input[type=number] { font: inherit; padding: 12px; border-radius: 12px; border: 1.5px solid var(--line); background: var(--card); color: var(--ink); }
+  form.setup input { width: 100%; }
+  .num { width: 84px; text-align: center; font-size: 20px; font-weight: 700; }
   [hidden] { display: none !important; }
   .rtl { direction: rtl; text-align: right; }
+  .docinfo { font-weight: 700; margin-bottom: 10px; word-break: break-word; }
+  .hint { font-size: 13px; color: var(--muted); }
+  nav { position: fixed; left: 0; right: 0; bottom: 0; display: flex; gap: 6px; padding: 8px 10px calc(8px + env(safe-area-inset-bottom)); background: var(--bg); border-top: 1.5px solid var(--line); max-width: 640px; margin: 0 auto; }
+  nav button { flex: 1; min-height: 56px; padding: 6px 4px; font-size: 13px; border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
+  nav button span { font-size: 20px; line-height: 1; }
+  nav button.here { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); }
 </style>
 </head>
 <body>
@@ -73,55 +83,149 @@
     <div class="status"><span id="dot" class="dot wait"></span><span id="statusText">Connecting…</span></div>
   </header>
 
-  <div class="card">
-    <div class="counter" id="counter">—</div>
-    <div class="kicker" id="kicker"></div>
-    <div class="title" id="title">Waiting for the tablet…</div>
-    <div class="next" id="next"></div>
-  </div>
-
-  <div class="grid">
-    <button id="prev">◀ Back</button>
-    <button id="nextBtn" class="big">Next ▶</button>
-  </div>
-  <div class="grid">
-    <button id="reveal">Reveal</button>
-    <button id="blank">Blank screen</button>
-    <button id="freeze">Freeze</button>
-    <button id="classmode">Class mode</button>
-  </div>
-
-  <div class="card">
-    <div class="label">Timer</div>
-    <div class="timer">
-      <span class="time" id="time">00:00</span>
-      <button id="tToggle">Start</button>
-      <button id="tReset">Reset</button>
-      <button id="tAdd">+1 min</button>
+  <!-- SLIDES -->
+  <div class="tab" id="tab-slides">
+    <div class="card">
+      <div class="counter" id="counter">—</div>
+      <div class="kicker" id="kicker"></div>
+      <div class="title" id="title">Waiting for the tablet…</div>
+      <div class="next" id="next"></div>
     </div>
-    <div class="lesson" id="lessonClock" style="margin-top:8px"></div>
+    <div class="grid">
+      <button id="prev">◀ Back</button>
+      <button id="nextBtn" class="big">Next ▶</button>
+    </div>
+    <div class="grid3">
+      <button id="reveal" class="small">Reveal</button>
+      <button id="blank" class="small">Blank</button>
+      <button id="freeze" class="small">Freeze</button>
+    </div>
+    <div class="card">
+      <div class="label">Your notes</div>
+      <div id="notes" class="notes empty">No notes for this slide.</div>
+    </div>
+    <div class="card slides">
+      <details>
+        <summary>Jump to a slide</summary>
+        <div id="slideList"></div>
+      </details>
+    </div>
   </div>
 
-  <div class="card">
-    <div class="label">Your notes</div>
-    <div id="notes" class="notes empty">No notes for this slide.</div>
+  <!-- PDF -->
+  <div class="tab" id="tab-pdf" hidden>
+    <div class="card">
+      <div class="label">Which PDF</div>
+      <div class="grid">
+        <button id="docBook" data-doc="book">Book</button>
+        <button id="docPlan" data-doc="plan">Lesson plan</button>
+      </div>
+      <div class="docinfo" id="docInfo">No PDF is open on the tablet.</div>
+      <button id="docShow" class="small" style="width:100%">Show on the class screen</button>
+    </div>
+    <div class="grid">
+      <button id="scrollUp" class="huge">▲<br><span style="font-size:14px">Scroll up</span></button>
+      <button id="scrollDown" class="huge">▼<br><span style="font-size:14px">Scroll down</span></button>
+    </div>
+    <div class="hint" style="margin:-4px 0 12px">Tap to scroll a little, or hold to keep scrolling.</div>
+    <div class="grid">
+      <button id="pagePrev">◀ Page</button>
+      <button id="pageNext">Page ▶</button>
+    </div>
+    <div class="card">
+      <div class="label">Go to page</div>
+      <div class="row">
+        <input id="pageNum" class="num" type="number" inputmode="numeric" min="1" placeholder="12">
+        <button id="pageGo" class="small">Go</button>
+      </div>
+    </div>
+    <div class="grid3">
+      <button id="zoomOut" class="small">Zoom −</button>
+      <button id="zoomFit" class="small">Fit</button>
+      <button id="zoomIn" class="small">Zoom +</button>
+    </div>
   </div>
 
-  <div class="card slides">
-    <details>
-      <summary>Jump to a slide</summary>
-      <div id="slideList"></div>
-    </details>
+  <!-- TIMER -->
+  <div class="tab" id="tab-timer" hidden>
+    <div class="card" style="text-align:center">
+      <div class="time" id="time">00:00</div>
+      <div class="grid" style="margin:12px 0 0">
+        <button id="tToggle" class="big">Start</button>
+        <button id="tReset">Reset</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="label">Set the time</div>
+      <div class="row" id="presets"></div>
+      <div class="row">
+        <input id="tMin" class="num" type="number" inputmode="numeric" min="0" max="180" placeholder="min">
+        <span style="font-size:24px;font-weight:800">:</span>
+        <input id="tSec" class="num" type="number" inputmode="numeric" min="0" max="59" placeholder="sec">
+        <button id="tSet" class="small">Set</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="label">Add or take away time</div>
+      <div class="row">
+        <button class="small" data-add="-60">−1 min</button>
+        <button class="small" data-add="-30">−30 s</button>
+        <button class="small" data-add="30">+30 s</button>
+        <button class="small" data-add="60">+1 min</button>
+        <button class="small" data-add="300">+5 min</button>
+      </div>
+      <button id="tClass" class="small" style="width:100%">Show the timer to the class</button>
+    </div>
+    <div class="card">
+      <div class="label">Lesson clock</div>
+      <div class="lesson" id="lessonClock" style="margin-bottom:8px"></div>
+      <div class="grid">
+        <button id="cToggle" class="small">Start</button>
+        <button id="cReset" class="small">Reset</button>
+      </div>
+    </div>
   </div>
 
-  <p style="text-align:center"><button id="forget" style="min-height:40px;padding:8px 14px;font-weight:600">Use a different tablet</button></p>
+  <!-- SCREEN -->
+  <div class="tab" id="tab-screen" hidden>
+    <div class="card">
+      <div class="label">What the class sees</div>
+      <div class="grid3">
+        <button id="showSlides" class="small">Slides</button>
+        <button id="showBook" class="small">Book</button>
+        <button id="showPlan" class="small">Plan</button>
+      </div>
+      <div class="hint" style="margin-bottom:10px">Tap to add or remove. Or pick a layout:</div>
+      <div class="grid">
+        <button class="small" data-layout="slides">Only slides</button>
+        <button class="small" data-layout="book">Only book</button>
+        <button class="small" data-layout="slides+book">Slides + book</button>
+        <button class="small" data-layout="plan">Only lesson plan</button>
+      </div>
+    </div>
+    <div class="grid">
+      <button id="classmode">Class mode</button>
+      <button id="blank2">Blank screen</button>
+      <button id="freeze2">Freeze</button>
+      <button id="home">⌂ Back to the lesson</button>
+    </div>
+    <div class="hint">“Back to the lesson” closes a game or a menu that is open on the tablet.</div>
+    <p style="text-align:center;margin-top:22px"><button id="forget" class="small" style="font-weight:600">Use a different tablet</button></p>
+  </div>
+
+  <nav id="nav">
+    <button data-tab="slides"><span>🎞</span>Slides</button>
+    <button data-tab="pdf"><span>📖</span>PDF</button>
+    <button data-tab="timer"><span>⏱</span>Timer</button>
+    <button data-tab="screen"><span>🖥</span>Screen</button>
+  </nav>
 </section>
 
 <script>
 (function () {
   "use strict";
   var $ = function (id) { return document.getElementById(id); };
-  var db = "", code = "", es = null, lastBeat = null, lastBeatAt = 0, state = null;
+  var db = "", code = "", es = null, lastBeatAt = 0, state = null, curDoc = "book";
 
   // The address may carry the database and the pairing code:
   //   page.html?db=https%3A%2F%2F...#CODE   (the code is after "#", so it is never sent to a server)
@@ -142,36 +246,37 @@
   }
 
   function base() { return db + "/remote/" + encodeURIComponent(code); }
-
-  function setStatus(kind, text) {
-    $("dot").className = "dot " + kind;
-    $("statusText").textContent = text;
-  }
-
+  function setStatus(kind, text) { $("dot").className = "dot " + kind; $("statusText").textContent = text; }
+  function two(n) { return (n < 10 ? "0" : "") + n; }
   function fmt(sec) {
     sec = Math.max(0, Math.floor(sec || 0));
     var h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
-    var two = function (n) { return (n < 10 ? "0" : "") + n; };
     return (h ? h + ":" + two(m) : two(m)) + ":" + two(s);
   }
-
   function hasArabic(t) { return /[؀-ۿ]/.test(t || ""); }
   function setText(el, text) { el.textContent = text || ""; el.classList.toggle("rtl", hasArabic(text)); }
+  var buzz = function () { try { if (navigator.vibrate) navigator.vibrate(18); } catch (e) {} };
 
-  var buzz = function () { try { if (navigator.vibrate) navigator.vibrate(20); } catch (e) {} };
-
-  function send(action, value) {
-    buzz();
+  // Sends one button press. Returns a promise so presses can be ordered.
+  function send(action, value, quiet) {
+    if (!quiet) buzz();
     var body = { a: action, t: Date.now() };
     if (value !== undefined) body.v = String(value);
-    fetch(base() + "/cmd.json", { method: "POST", body: JSON.stringify(body) })
+    return fetch(base() + "/cmd.json", { method: "POST", body: JSON.stringify(body) })
       .then(function (r) { if (!r.ok) setStatus("bad", "Could not send (" + r.status + ")"); })
       .catch(function () { setStatus("bad", "No internet"); });
   }
+  function sendAll(list) {
+    return list.reduce(function (p, c) { return p.then(function () { return send(c[0], c[1], true); }); }, Promise.resolve());
+  }
+
+  function docOpen(name) { return !!(state && state[name] && state[name].open); }
 
   function render(s) {
     state = s;
     setText($("lesson"), s.lesson || "Classroom Remote");
+
+    // slides
     $("counter").textContent = "Slide " + (s.index + 1) + " of " + s.total;
     setText($("kicker"), s.kicker);
     setText($("title"), s.title || "(untitled)");
@@ -179,26 +284,15 @@
     var n = $("notes");
     if (s.notes) { n.textContent = s.notes; n.className = "notes" + (hasArabic(s.notes) ? " rtl" : ""); }
     else { n.textContent = "No notes for this slide."; n.className = "notes empty"; }
-
     $("prev").disabled = s.index <= 0;
     $("nextBtn").disabled = s.index >= s.total - 1;
     var rv = $("reveal");
     rv.textContent = s.points > 0 ? "Reveal (" + s.revealed + "/" + s.points + ")" : "Reveal";
     rv.disabled = s.points === 0 || s.frozen || s.revealed >= s.points;
-    $("blank").classList.toggle("on", !!s.blank);
-    $("blank").textContent = s.blank ? "Show screen" : "Blank screen";
-    $("freeze").classList.toggle("on", !!s.frozen);
-    $("freeze").textContent = s.frozen ? "Unfreeze" : "Freeze";
+    ["blank", "blank2"].forEach(function (id) { $(id).classList.toggle("on", !!s.blank); $(id).textContent = s.blank ? "Show screen" : (id === "blank" ? "Blank" : "Blank screen"); });
+    ["freeze", "freeze2"].forEach(function (id) { $(id).classList.toggle("on", !!s.frozen); $(id).textContent = s.frozen ? "Unfreeze" : "Freeze"; });
     $("classmode").classList.toggle("on", !!s.classMode);
     $("classmode").textContent = s.classMode ? "Exit class mode" : "Class mode";
-
-    var t = s.timer || {};
-    var tm = $("time");
-    tm.textContent = t.finished ? "Time's up!" : fmt(t.left);
-    tm.classList.toggle("urgent", !!t.finished || (t.running && t.left <= 10));
-    $("tToggle").textContent = t.running ? "Pause" : "Start";
-    $("tToggle").disabled = !t.running && !(t.left > 0);
-    $("lessonClock").textContent = "Lesson " + fmt(s.lessonClock) + (s.planned ? " / " + s.planned + " min planned" : "");
 
     var list = $("slideList");
     if (list.dataset.sig !== JSON.stringify(s.titles)) {
@@ -213,6 +307,46 @@
       });
     }
     Array.prototype.forEach.call(list.children, function (b, i) { b.classList.toggle("here", i === s.index); });
+
+    // timer
+    var t = s.timer || {};
+    var tm = $("time");
+    tm.textContent = t.finished ? "Time's up!" : fmt(t.left);
+    tm.classList.toggle("urgent", !!t.finished || (t.running && t.left <= 10));
+    $("tToggle").textContent = t.running ? "Pause" : "Start";
+    $("tToggle").disabled = !t.running && !(t.left > 0);
+    $("tClass").classList.toggle("on", !!s.showTimer);
+    $("tClass").textContent = s.showTimer ? "Timer is shown to the class" : "Show the timer to the class";
+    $("lessonClock").textContent = "Lesson " + fmt(s.lessonClock) + (s.planned ? " / " + s.planned + " min planned" : "");
+
+    // the PDFs
+    if (!docOpen(curDoc) && docOpen(curDoc === "book" ? "plan" : "book")) curDoc = curDoc === "book" ? "plan" : "book";
+    ["book", "plan"].forEach(function (d) {
+      var b = $(d === "book" ? "docBook" : "docPlan");
+      b.disabled = !docOpen(d);
+      b.classList.toggle("on", curDoc === d && docOpen(d));
+    });
+    var open = docOpen(curDoc);
+    var d = open ? s[curDoc] : null;
+    $("docInfo").textContent = open
+      ? (d.name || (curDoc === "book" ? "Book" : "Lesson plan")) + " — page " + d.page + (d.pages ? " of " + d.pages : "")
+      : "No PDF is open on the tablet. Open one there first.";
+    ["scrollUp", "scrollDown", "pagePrev", "pageNext", "pageGo", "zoomOut", "zoomIn", "zoomFit", "docShow", "pageNum"].forEach(function (id) { $(id).disabled = !open; });
+    var shown = (s.onScreen || []).indexOf(curDoc) >= 0;
+    $("docShow").classList.toggle("on", open && shown);
+    $("docShow").textContent = shown ? "On the class screen · tap to remove" : "Show on the class screen";
+
+    // what the class sees
+    var on = s.onScreen || [];
+    [["showSlides", "slides"], ["showBook", "book"], ["showPlan", "plan"]].forEach(function (p) {
+      var b = $(p[0]);
+      b.classList.toggle("on", on.indexOf(p[1]) >= 0);
+      b.disabled = p[1] !== "slides" && !docOpen(p[1]);
+    });
+    Array.prototype.forEach.call(document.querySelectorAll("[data-layout]"), function (b) {
+      var need = b.dataset.layout.split("+");
+      b.disabled = need.some(function (x) { return x !== "slides" && !docOpen(x); });
+    });
   }
 
   function connect() {
@@ -223,7 +357,6 @@
       var msg; try { msg = JSON.parse(e.data); } catch (x) { return; }
       if (msg.path === "/" && msg.data && typeof msg.data === "object") {
         lastBeatAt = Date.now();
-        if (msg.data.beat !== lastBeat) lastBeat = msg.data.beat;
         render(msg.data);
         setStatus("ok", "Connected");
       }
@@ -234,15 +367,99 @@
   }
 
   // The tablet sends an update at least every 10 seconds. If none arrive, say so.
-  setInterval(function () {
-    if (!state) return;
-    var quiet = Date.now() - lastBeatAt;
-    if (quiet > 25000) setStatus("bad", "Tablet not responding");
-  }, 3000);
+  setInterval(function () { if (state && Date.now() - lastBeatAt > 25000) setStatus("bad", "Tablet not responding"); }, 3000);
+
+  // ---- the tabs
+  function showTab(name) {
+    ["slides", "pdf", "timer", "screen"].forEach(function (t) { $("tab-" + t).hidden = t !== name; });
+    Array.prototype.forEach.call(document.querySelectorAll("#nav button"), function (b) { b.classList.toggle("here", b.dataset.tab === name); });
+    try { localStorage.setItem("cr_tab", name); } catch (e) {}
+    window.scrollTo(0, 0);
+  }
+  Array.prototype.forEach.call(document.querySelectorAll("#nav button"), function (b) { b.onclick = function () { showTab(b.dataset.tab); }; });
+
+  // ---- slides
+  $("prev").onclick = function () { send("prev"); };
+  $("nextBtn").onclick = function () { send("next"); };
+  $("reveal").onclick = function () { send("reveal"); };
+  $("blank").onclick = $("blank2").onclick = function () { send("blank"); };
+  $("freeze").onclick = $("freeze2").onclick = function () { send("freeze"); };
+  $("classmode").onclick = function () { send("classmode"); };
+  $("home").onclick = function () { send("home"); };
+  $("slideList").onclick = function (e) { var b = e.target.closest("button"); if (b) send("goto", b.dataset.i); };
+
+  // ---- PDF
+  Array.prototype.forEach.call(document.querySelectorAll("[data-doc]"), function (b) {
+    b.onclick = function () { curDoc = b.dataset.doc; if (state) render(state); };
+  });
+  // Tap: scroll a little. Hold: keep scrolling.
+  function holdScroll(el, direction) {
+    var wait = null, rep = null;
+    var stop = function () { clearTimeout(wait); clearInterval(rep); wait = rep = null; };
+    el.addEventListener("pointerdown", function (e) {
+      if (el.disabled) return;
+      e.preventDefault();
+      send("pscroll", curDoc + ":" + (0.5 * direction));
+      wait = setTimeout(function () {
+        rep = setInterval(function () { send("pscroll", curDoc + ":" + (0.28 * direction), true); }, 300);
+      }, 450);
+    });
+    ["pointerup", "pointerleave", "pointercancel"].forEach(function (ev) { el.addEventListener(ev, stop); });
+  }
+  holdScroll($("scrollUp"), -1);
+  holdScroll($("scrollDown"), 1);
+  $("pagePrev").onclick = function () { send("ppage", curDoc + ":-1"); };
+  $("pageNext").onclick = function () { send("ppage", curDoc + ":+1"); };
+  $("pageGo").onclick = function () { var n = parseInt($("pageNum").value, 10); if (n > 0) { send("pgoto", curDoc + ":" + n); $("pageNum").blur(); } };
+  $("pageNum").addEventListener("keydown", function (e) { if (e.key === "Enter") $("pageGo").click(); });
+  $("zoomIn").onclick = function () { send("pzoom", curDoc + ":in"); };
+  $("zoomOut").onclick = function () { send("pzoom", curDoc + ":out"); };
+  $("zoomFit").onclick = function () { send("pzoom", curDoc + ":fit"); };
+  $("docShow").onclick = function () { send("show", curDoc); };
+
+  // ---- timer
+  $("tToggle").onclick = function () { send(state && state.timer && state.timer.running ? "tpause" : "tstart"); };
+  $("tReset").onclick = function () { send("treset"); };
+  $("tClass").onclick = function () { send("tclass"); };
+  $("cToggle").onclick = function () { send("cstart"); };
+  $("cReset").onclick = function () { send("creset"); };
+  [1, 2, 3, 5, 10, 15, 20].forEach(function (m) {
+    var b = document.createElement("button");
+    b.className = "small"; b.textContent = m + " min";
+    b.onclick = function () { send("tsetsec", m * 60); };
+    $("presets").appendChild(b);
+  });
+  $("tSet").onclick = function () {
+    var m = parseInt($("tMin").value, 10) || 0, s = parseInt($("tSec").value, 10) || 0;
+    var total = m * 60 + s;
+    if (total > 0) { send("tsetsec", total); $("tMin").blur(); $("tSec").blur(); }
+  };
+  Array.prototype.forEach.call(document.querySelectorAll("[data-add]"), function (b) { b.onclick = function () { send("tadd", b.dataset.add); }; });
+
+  // ---- what the class sees
+  $("showSlides").onclick = function () { send("show", "slides"); };
+  $("showBook").onclick = function () { send("show", "book"); };
+  $("showPlan").onclick = function () { send("show", "plan"); };
+  Array.prototype.forEach.call(document.querySelectorAll("[data-layout]"), function (b) {
+    b.onclick = function () {
+      buzz();
+      var parts = b.dataset.layout.split("+");
+      sendAll([["only", parts[0]]].concat(parts.slice(1).map(function (p) { return ["show", p]; })));
+    };
+  });
+
+  $("forget").onclick = function () {
+    try { localStorage.removeItem("cr_db"); localStorage.removeItem("cr_code"); } catch (x) {}
+    if (es) es.close(); db = ""; code = ""; state = null; showSetup();
+  };
 
   function showSetup() { $("setup").hidden = false; $("remote").hidden = true; $("db").value = db; $("code").value = code; }
-  function showRemote() { $("setup").hidden = true; $("remote").hidden = false; connect(); }
-
+  function showRemote() {
+    $("setup").hidden = true; $("remote").hidden = false;
+    var tab = "slides"; try { tab = localStorage.getItem("cr_tab") || "slides"; } catch (e) {}
+    showTab(tab);
+    connect();
+  }
   $("setupForm").addEventListener("submit", function (e) {
     e.preventDefault();
     db = $("db").value.trim().replace(/\/+$/, "").replace(/\.json$/, "");
@@ -252,25 +469,8 @@
     showRemote();
   });
 
-  $("prev").onclick = function () { send("prev"); };
-  $("nextBtn").onclick = function () { send("next"); };
-  $("reveal").onclick = function () { send("reveal"); };
-  $("blank").onclick = function () { send("blank"); };
-  $("freeze").onclick = function () { send("freeze"); };
-  $("classmode").onclick = function () { send("classmode"); };
-  $("tToggle").onclick = function () { send(state && state.timer && state.timer.running ? "tpause" : "tstart"); };
-  $("tReset").onclick = function () { send("treset"); };
-  $("tAdd").onclick = function () { send("tadd"); };
-  $("lessonClock").onclick = function () { send("cstart"); };
-  $("slideList").onclick = function (e) { var b = e.target.closest("button"); if (b) send("goto", b.dataset.i); };
-  $("forget").onclick = function () {
-    try { localStorage.removeItem("cr_db"); localStorage.removeItem("cr_code"); } catch (x) {}
-    if (es) es.close(); db = ""; code = ""; state = null; showSetup();
-  };
-
   // Keep the phone screen awake while the remote is open.
-  var lock = null;
-  function keepAwake() { try { if (navigator.wakeLock) navigator.wakeLock.request("screen").then(function (l) { lock = l; }).catch(function () {}); } catch (e) {} }
+  function keepAwake() { try { if (navigator.wakeLock) navigator.wakeLock.request("screen").catch(function () {}); } catch (e) {} }
   document.addEventListener("visibilitychange", function () { if (document.visibilityState === "visible" && !$("remote").hidden) { keepAwake(); if (es && es.readyState === 2) connect(); } });
 
   readConfig();
