@@ -95,6 +95,7 @@
       <button id="prev">◀ Back</button>
       <button id="nextBtn" class="big">Next ▶</button>
     </div>
+    <button id="playGame" class="on" style="display:none;width:100%;margin-bottom:10px;min-height:56px;font-size:18px">▶ Play game</button>
     <div class="grid3">
       <button id="reveal" class="small">Reveal</button>
       <button id="blank" class="small">Blank</button>
@@ -291,6 +292,9 @@
     rv.disabled = s.points === 0 || s.frozen || s.revealed >= s.points;
     ["blank", "blank2"].forEach(function (id) { $(id).classList.toggle("on", !!s.blank); $(id).textContent = s.blank ? "Show screen" : (id === "blank" ? "Blank" : "Blank screen"); });
     ["freeze", "freeze2"].forEach(function (id) { $(id).classList.toggle("on", !!s.frozen); $(id).textContent = s.frozen ? "Unfreeze" : "Freeze"; });
+    var pg = $("playGame");
+    pg.style.display = s.game ? "block" : "none";
+    pg.textContent = s.game ? "▶ Play: " + s.game : "";
     $("classmode").classList.toggle("on", !!s.classMode);
     $("classmode").textContent = s.classMode ? "Exit class mode" : "Class mode";
 
@@ -385,6 +389,7 @@
   $("blank").onclick = $("blank2").onclick = function () { send("blank"); };
   $("freeze").onclick = $("freeze2").onclick = function () { send("freeze"); };
   $("classmode").onclick = function () { send("classmode"); };
+  $("playGame").onclick = function () { send("playgame"); };
   $("home").onclick = function () { send("home"); };
   $("slideList").onclick = function (e) { var b = e.target.closest("button"); if (b) send("goto", b.dataset.i); };
 
