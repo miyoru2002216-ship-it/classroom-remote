@@ -83,6 +83,9 @@
     <div class="status"><span id="dot" class="dot wait"></span><span id="statusText">Connecting…</span></div>
   </header>
 
+  <!-- Shown on every tab while a game or another screen is open on the tablet. -->
+  <button id="backBar" class="on" style="display:none;width:100%;margin:0 0 10px;min-height:64px;font-size:18px">⌂ A game is open on the tablet. Tap to go back to the lesson</button>
+
   <!-- SLIDES -->
   <div class="tab" id="tab-slides">
     <div class="card">
@@ -292,8 +295,10 @@
     rv.disabled = s.points === 0 || s.frozen || s.revealed >= s.points;
     ["blank", "blank2"].forEach(function (id) { $(id).classList.toggle("on", !!s.blank); $(id).textContent = s.blank ? "Show screen" : (id === "blank" ? "Blank" : "Blank screen"); });
     ["freeze", "freeze2"].forEach(function (id) { $(id).classList.toggle("on", !!s.frozen); $(id).textContent = s.frozen ? "Unfreeze" : "Freeze"; });
+    var bb = $("backBar");
+    bb.style.display = s.open ? "block" : "none";
     var pg = $("playGame");
-    pg.style.display = s.game ? "block" : "none";
+    pg.style.display = s.game && !s.open ? "block" : "none";
     pg.textContent = s.game ? "▶ Play: " + s.game : "";
     $("classmode").classList.toggle("on", !!s.classMode);
     $("classmode").textContent = s.classMode ? "Exit class mode" : "Class mode";
@@ -390,6 +395,7 @@
   $("freeze").onclick = $("freeze2").onclick = function () { send("freeze"); };
   $("classmode").onclick = function () { send("classmode"); };
   $("playGame").onclick = function () { send("playgame"); };
+  $("backBar").onclick = function () { send("home"); };
   $("home").onclick = function () { send("home"); };
   $("slideList").onclick = function (e) { var b = e.target.closest("button"); if (b) send("goto", b.dataset.i); };
 
