@@ -94,6 +94,18 @@
       <div id="classBtns" style="display:flex;flex-wrap:wrap;gap:8px"></div>
       <div class="hint" id="classHint" style="margin-top:8px"></div>
     </div>
+    <div class="card" id="listenCard" style="display:none">
+      <div class="label">Listening</div>
+      <div class="grid">
+        <button id="listenPlay" class="big">▶ Play</button>
+        <button id="listenRestart">⟲ From the start</button>
+      </div>
+      <div class="grid" style="margin-top:8px">
+        <button id="listenBack" class="small">⏪ 5 s</button>
+        <button id="listenFwd" class="small">5 s ⏩</button>
+      </div>
+      <div class="hint" id="listenInfo" style="margin-top:8px"></div>
+    </div>
     <div class="card">
       <div class="counter" id="counter">—</div>
       <div class="kicker" id="kicker"></div>
@@ -326,6 +338,12 @@
     var chosen = cls.filter(function (c) { return c.id === s.currentClass; })[0];
     $("classHint").textContent = chosen ? "Games and Ask a student use " + chosen.label + " (" + chosen.n + " students)." : "Choose the class first, so marks go to the right students.";
     $("classCard").classList.toggle("warn", !chosen);
+    // the listening of this slide
+    var ls = s.listen || {};
+    $("listenCard").style.display = ls.on ? "block" : "none";
+    $("listenPlay").textContent = ls.loading ? "Loading…" : (ls.playing ? "⏸ Pause" : "▶ Play");
+    $("listenPlay").disabled = !!ls.loading;
+    $("listenInfo").textContent = fmt(ls.pos || 0) + (ls.dur ? " / " + fmt(ls.dur) : "");
     $("classmode").classList.toggle("on", !!s.classMode);
     $("classmode").textContent = s.classMode ? "Exit class mode" : "Class mode";
 
@@ -421,6 +439,10 @@
   $("freeze").onclick = $("freeze2").onclick = function () { send("freeze"); };
   $("classmode").onclick = function () { send("classmode"); };
   $("playGame").onclick = function () { send("playgame"); };
+  $("listenPlay").onclick = function () { send("lplay"); };
+  $("listenRestart").onclick = function () { send("lrestart"); };
+  $("listenBack").onclick = function () { send("lskip", -5); };
+  $("listenFwd").onclick = function () { send("lskip", 5); };
   $("classBtns").onclick = function (e) { var b = e.target.closest("button"); if (b && b.dataset.cls) send("class", b.dataset.cls); };
   $("backBar").onclick = function () { send("home"); };
   $("home").onclick = function () { send("home"); };
