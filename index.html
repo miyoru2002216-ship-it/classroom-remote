@@ -40,6 +40,7 @@
   button.on { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
   button.small { padding: 10px 12px; min-height: 46px; font-weight: 700; }
   button:disabled { opacity: .4; }
+  .card.warn { outline: 3px solid #f2a33a; }
   .time { font-size: 52px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1.1; }
   .time.urgent { color: var(--bad); }
   .lesson { font-size: 14px; color: var(--muted); }
@@ -88,6 +89,11 @@
 
   <!-- SLIDES -->
   <div class="tab" id="tab-slides">
+    <div class="card" id="classCard" style="display:none">
+      <div class="label">Class I am teaching</div>
+      <div id="classBtns" style="display:flex;flex-wrap:wrap;gap:8px"></div>
+      <div class="hint" id="classHint" style="margin-top:8px"></div>
+    </div>
     <div class="card">
       <div class="counter" id="counter">—</div>
       <div class="kicker" id="kicker"></div>
@@ -300,6 +306,26 @@
     var pg = $("playGame");
     pg.style.display = s.game && !s.open ? "block" : "none";
     pg.textContent = s.game ? "▶ Play: " + s.game : "";
+    // the class being taught
+    var cls = s.classes || [];
+    $("classCard").style.display = cls.length ? "block" : "none";
+    var sig = JSON.stringify(cls);
+    var cb = $("classBtns");
+    if (cb.dataset.sig !== sig) {
+      cb.dataset.sig = sig;
+      cb.textContent = "";
+      cls.forEach(function (c) {
+        var b = document.createElement("button");
+        b.className = "small";
+        b.dataset.cls = c.id;
+        b.textContent = c.label;
+        cb.appendChild(b);
+      });
+    }
+    Array.prototype.forEach.call(cb.children, function (b) { b.classList.toggle("on", b.dataset.cls === s.currentClass); });
+    var chosen = cls.filter(function (c) { return c.id === s.currentClass; })[0];
+    $("classHint").textContent = chosen ? "Games and Ask a student use " + chosen.label + " (" + chosen.n + " students)." : "Choose the class first, so marks go to the right students.";
+    $("classCard").classList.toggle("warn", !chosen);
     $("classmode").classList.toggle("on", !!s.classMode);
     $("classmode").textContent = s.classMode ? "Exit class mode" : "Class mode";
 
@@ -395,6 +421,7 @@
   $("freeze").onclick = $("freeze2").onclick = function () { send("freeze"); };
   $("classmode").onclick = function () { send("classmode"); };
   $("playGame").onclick = function () { send("playgame"); };
+  $("classBtns").onclick = function (e) { var b = e.target.closest("button"); if (b && b.dataset.cls) send("class", b.dataset.cls); };
   $("backBar").onclick = function () { send("home"); };
   $("home").onclick = function () { send("home"); };
   $("slideList").onclick = function (e) { var b = e.target.closest("button"); if (b) send("goto", b.dataset.i); };
