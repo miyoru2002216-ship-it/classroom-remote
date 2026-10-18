@@ -117,6 +117,7 @@
       <button id="nextBtn" class="big">Next ▶</button>
     </div>
     <button id="playGame" class="on" style="display:none;width:100%;margin-bottom:10px;min-height:56px;font-size:18px">▶ Play game</button>
+    <button id="askStudent" style="width:100%;margin-bottom:10px;min-height:48px">🙋 Ask a student</button>
     <div class="grid3">
       <button id="reveal" class="small">Reveal</button>
       <button id="blank" class="small">Blank</button>
@@ -439,6 +440,7 @@
   $("freeze").onclick = $("freeze2").onclick = function () { send("freeze"); };
   $("classmode").onclick = function () { send("classmode"); };
   $("playGame").onclick = function () { send("playgame"); };
+  $("askStudent").onclick = function () { send("ask"); };
   $("listenPlay").onclick = function () { send("lplay"); };
   $("listenRestart").onclick = function () { send("lrestart"); };
   $("listenBack").onclick = function () { send("lskip", -5); };
