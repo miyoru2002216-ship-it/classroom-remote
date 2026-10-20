@@ -139,8 +139,9 @@
   <div class="tab" id="tab-pdf" hidden>
     <div class="card">
       <div class="label">Which PDF</div>
-      <div class="grid">
+      <div class="grid3">
         <button id="docBook" data-doc="book">Book</button>
+        <button id="docBook2" data-doc="book2">Book 2</button>
         <button id="docPlan" data-doc="plan">Lesson plan</button>
       </div>
       <div class="docinfo" id="docInfo">No PDF is open on the tablet.</div>
@@ -216,6 +217,7 @@
       <div class="grid3">
         <button id="showSlides" class="small">Slides</button>
         <button id="showBook" class="small">Book</button>
+        <button id="showBook2" class="small">Book 2</button>
         <button id="showPlan" class="small">Plan</button>
       </div>
       <div class="hint" style="margin-bottom:10px">Tap to add or remove. Or pick a layout:</div>
@@ -223,6 +225,8 @@
         <button class="small" data-layout="slides">Only slides</button>
         <button class="small" data-layout="book">Only book</button>
         <button class="small" data-layout="slides+book">Slides + book</button>
+        <button class="small" data-layout="book2">Only second book</button>
+        <button class="small" data-layout="book+book2">Book + second book</button>
         <button class="small" data-layout="plan">Only lesson plan</button>
       </div>
     </div>
@@ -374,16 +378,19 @@
     $("lessonClock").textContent = "Lesson " + fmt(s.lessonClock) + (s.planned ? " / " + s.planned + " min planned" : "");
 
     // the PDFs
-    if (!docOpen(curDoc) && docOpen(curDoc === "book" ? "plan" : "book")) curDoc = curDoc === "book" ? "plan" : "book";
-    ["book", "plan"].forEach(function (d) {
-      var b = $(d === "book" ? "docBook" : "docPlan");
+    if (!docOpen(curDoc)) {
+      var alt = ["book", "book2", "plan"].filter(docOpen)[0];
+      if (alt) curDoc = alt;
+    }
+    ["book", "book2", "plan"].forEach(function (d) {
+      var b = $(d === "book" ? "docBook" : d === "book2" ? "docBook2" : "docPlan");
       b.disabled = !docOpen(d);
       b.classList.toggle("on", curDoc === d && docOpen(d));
     });
     var open = docOpen(curDoc);
     var d = open ? s[curDoc] : null;
     $("docInfo").textContent = open
-      ? (d.name || (curDoc === "book" ? "Book" : "Lesson plan")) + " — page " + d.page + (d.pages ? " of " + d.pages : "")
+      ? (d.name || (curDoc === "book" ? "Book" : curDoc === "book2" ? "Second book" : "Lesson plan")) + " — page " + d.page + (d.pages ? " of " + d.pages : "")
       : "No PDF is open on the tablet. Open one there first.";
     ["scrollUp", "scrollDown", "pagePrev", "pageNext", "pageGo", "zoomOut", "zoomIn", "zoomFit", "docShow", "pageNum"].forEach(function (id) { $(id).disabled = !open; });
     var shown = (s.onScreen || []).indexOf(curDoc) >= 0;
@@ -392,7 +399,7 @@
 
     // what the class sees
     var on = s.onScreen || [];
-    [["showSlides", "slides"], ["showBook", "book"], ["showPlan", "plan"]].forEach(function (p) {
+    [["showSlides", "slides"], ["showBook", "book"], ["showBook2", "book2"], ["showPlan", "plan"]].forEach(function (p) {
       var b = $(p[0]);
       b.classList.toggle("on", on.indexOf(p[1]) >= 0);
       b.disabled = p[1] !== "slides" && !docOpen(p[1]);
@@ -501,6 +508,7 @@
   // ---- what the class sees
   $("showSlides").onclick = function () { send("show", "slides"); };
   $("showBook").onclick = function () { send("show", "book"); };
+  $("showBook2").onclick = function () { send("show", "book2"); };
   $("showPlan").onclick = function () { send("show", "plan"); };
   Array.prototype.forEach.call(document.querySelectorAll("[data-layout]"), function (b) {
     b.onclick = function () {
