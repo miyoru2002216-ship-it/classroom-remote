@@ -60,6 +60,16 @@
   nav button { flex: 1; min-height: 56px; padding: 6px 4px; font-size: 13px; border-radius: 14px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; }
   nav button span { font-size: 20px; line-height: 1; }
   nav button.here { background: var(--brand); color: var(--brand-ink); border-color: var(--brand); }
+  .gtitle { font-size: 22px; font-weight: 800; }
+  .gstatus { font-size: 15px; color: var(--muted); margin-top: 4px; white-space: pre-wrap; }
+  .gacts { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+  .gacts button { font-size: 16px; min-height: 58px; }
+  .gacts button.prim { grid-column: 1 / -1; background: var(--brand); color: var(--brand-ink); border-color: var(--brand); font-size: 18px; min-height: 64px; }
+  .gacts.many button.prim { grid-column: auto; font-size: 16px; min-height: 58px; }
+  .gacts.keys { grid-template-columns: repeat(6, 1fr); }
+  .gacts.keys button { min-height: 50px; padding: 6px 0; font-size: 18px; }
+  .glist { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .glist button { min-height: 50px; font-weight: 700; font-size: 15px; }
 </style>
 </head>
 <body>
@@ -132,6 +142,26 @@
         <summary>Jump to a slide</summary>
         <div id="slideList"></div>
       </details>
+    </div>
+  </div>
+
+  <!-- GAMES -->
+  <div class="tab" id="tab-games" hidden>
+    <div class="card" id="gameCard">
+      <div class="label">Game on the tablet</div>
+      <div class="gtitle" id="gTitle">No game is open</div>
+      <div class="gstatus" id="gStatus">Open the slide's game or pick one below. Its buttons appear here.</div>
+      <div class="gacts" id="gActs"></div>
+    </div>
+    <button id="gPlaySlide" class="on" style="display:none;width:100%;margin-bottom:10px;min-height:56px;font-size:18px">▶ Play this slide's game</button>
+    <div class="grid">
+      <button id="gAsk">🙋 Ask a student</button>
+      <button id="gClose">⌂ Close the game</button>
+    </div>
+    <div class="card">
+      <div class="label">Open a game</div>
+      <div class="glist" id="gList"></div>
+      <div class="hint" style="margin-top:8px">Word games use this slide's word set when it has one; otherwise choose the set on the tablet.</div>
     </div>
   </div>
 
@@ -242,6 +272,7 @@
 
   <nav id="nav">
     <button data-tab="slides"><span>🎞</span>Slides</button>
+    <button data-tab="games"><span>🎮</span>Games</button>
     <button data-tab="pdf"><span>📖</span>PDF</button>
     <button data-tab="timer"><span>⏱</span>Timer</button>
     <button data-tab="screen"><span>🖥</span>Screen</button>
@@ -252,7 +283,7 @@
 (function () {
   "use strict";
   var $ = function (id) { return document.getElementById(id); };
-  var db = "", code = "", es = null, lastBeatAt = 0, state = null, curDoc = "book";
+  var db = "", code = "", es = null, lastBeatAt = 0, state = null, curDoc = "book", hadGame = false;
 
   // The address may carry the database and the pairing code:
   //   page.html?db=https%3A%2F%2F...#CODE   (the code is after "#", so it is never sent to a server)
@@ -366,6 +397,46 @@
     }
     Array.prototype.forEach.call(list.children, function (b, i) { b.classList.toggle("here", i === s.index); });
 
+    // the game on the tablet (Games tab)
+    var g = s.ctrl || null;
+    $("gTitle").textContent = g ? (g.t || "Game") : "No game is open";
+    setText($("gStatus"), g ? (g.s || "") : "Open the slide's game or pick one below. Its buttons appear here.");
+    var acts = $("gActs"), list = (g && g.a) || [];
+    var gsig = JSON.stringify(list);
+    if (acts.dataset.sig !== gsig) {
+      acts.dataset.sig = gsig;
+      acts.textContent = "";
+      var prims = list.filter(function (a) { return a.p; }).length;
+      var keys = list.length > 12 && list.every(function (a) { return (a.l || "").length <= 2 || a.id === "turn"; });
+      acts.className = "gacts" + (keys ? " keys" : (prims > 1 ? " many" : ""));
+      list.forEach(function (a) {
+        var b = document.createElement("button");
+        b.dataset.gid = a.id;
+        b.textContent = a.l;
+        if (a.p) b.className = "prim";
+        if (a.off) b.disabled = true;
+        if (hasArabic(a.l)) b.classList.add("rtl");
+        acts.appendChild(b);
+      });
+    }
+    $("gPlaySlide").style.display = s.game && !g ? "block" : "none";
+    $("gPlaySlide").textContent = s.game ? "▶ Play: " + s.game : "";
+    $("gClose").disabled = !s.open;
+    var gl = $("gList"), gls = JSON.stringify(s.games || []);
+    if (gl.dataset.sig !== gls) {
+      gl.dataset.sig = gls;
+      gl.textContent = "";
+      (s.games || []).forEach(function (x) {
+        var b = document.createElement("button");
+        b.dataset.gk = x.k; b.textContent = x.l;
+        if (hasArabic(x.l)) b.classList.add("rtl");
+        gl.appendChild(b);
+      });
+    }
+    // jump to the Games tab when a game opens on the tablet
+    if (g && !hadGame && !$("tab-slides").hidden) showTab("games");
+    hadGame = !!g;
+
     // timer
     var t = s.timer || {};
     var tm = $("time");
@@ -432,7 +503,7 @@
 
   // ---- the tabs
   function showTab(name) {
-    ["slides", "pdf", "timer", "screen"].forEach(function (t) { $("tab-" + t).hidden = t !== name; });
+    ["slides", "games", "pdf", "timer", "screen"].forEach(function (t) { $("tab-" + t).hidden = t !== name; });
     Array.prototype.forEach.call(document.querySelectorAll("#nav button"), function (b) { b.classList.toggle("here", b.dataset.tab === name); });
     try { localStorage.setItem("cr_tab", name); } catch (e) {}
     window.scrollTo(0, 0);
@@ -456,6 +527,13 @@
   $("backBar").onclick = function () { send("home"); };
   $("home").onclick = function () { send("home"); };
   $("slideList").onclick = function (e) { var b = e.target.closest("button"); if (b) send("goto", b.dataset.i); };
+
+  // ---- games
+  $("gActs").onclick = function (e) { var b = e.target.closest("button"); if (b && b.dataset.gid && !b.disabled) send("gact", b.dataset.gid); };
+  $("gList").onclick = function (e) { var b = e.target.closest("button"); if (b && b.dataset.gk) send("opengame", b.dataset.gk); };
+  $("gPlaySlide").onclick = function () { send("playgame"); };
+  $("gAsk").onclick = function () { send("ask"); };
+  $("gClose").onclick = function () { send("home"); };
 
   // ---- PDF
   Array.prototype.forEach.call(document.querySelectorAll("[data-doc]"), function (b) {
